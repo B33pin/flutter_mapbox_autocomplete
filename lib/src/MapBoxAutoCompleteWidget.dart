@@ -1,6 +1,6 @@
 part of flutter_mapbox_autocomplete;
 
-class MapBoxAutoCompleteWidget extends StatefulWidget {
+class MapBoxAutoCompleteWidget extends SearchDelegate {
   /// Mapbox API_TOKEN
   final String apiKey;
 
@@ -43,80 +43,88 @@ class MapBoxAutoCompleteWidget extends StatefulWidget {
     this.country,
   });
 
-  @override
-  _MapBoxAutoCompleteWidgetState createState() =>
-      _MapBoxAutoCompleteWidgetState();
-}
-
-class _MapBoxAutoCompleteWidgetState extends State<MapBoxAutoCompleteWidget> {
-  final _searchFieldTextController = TextEditingController();
-  final _searchFieldTextFocus = FocusNode();
-
-  Predections? _placePredictions = Predections.empty();
-
-  Future<void> _getPlaces(String input) async {
+  Future<Predections> _getPlaces(String input) async {
     if (input.length > 0) {
       String url =
-          "https://api.mapbox.com/geocoding/v5/mapbox.places/$input.json?access_token=${widget.apiKey}&cachebuster=1566806258853&autocomplete=true&language=${widget.language}&limit=${widget.limit}";
-      if (widget.location != null) {
-        url += "&proximity=${widget.location!.lng}%2C${widget.location!.lat}";
+          "https://api.mapbox.com/geocoding/v5/mapbox.places/$input.json?access_token=${apiKey}&cachebuster=1566806258853&autocomplete=true&language=${language}&limit=${limit}";
+      if (location != null) {
+        url += "&proximity=${location!.lng}%2C${location!.lat}";
       }
-      if (widget.country != null) {
-        url += "&country=${widget.country}";
+      if (country != null) {
+        url += "&country=$country";
       }
       final response = await http.get(Uri.parse(url));
       // print(response.body);
       // // final json = jsonDecode(response.body);
       final predictions = Predections.fromRawJson(response.body);
 
-      _placePredictions = null;
-
-      setState(() {
-        _placePredictions = predictions;
-      });
+      return predictions;
     } else {
-      setState(() => _placePredictions = Predections.empty());
+      return Predections.empty();
     }
   }
 
-  void _selectPlace(MapBoxPlace prediction) async {
-    // Calls the `onSelected` callback
-    widget.onSelect!(prediction);
-    if (widget.closeOnSelect) Navigator.pop(context);
+  // void _selectPlace(MapBoxPlace prediction) async {
+  //   // Calls the `onSelected` callback
+  //   widget.onSelect!(prediction);
+  //   if (widget.closeOnSelect) Navigator.pop(context);
+  // }
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        tooltip: 'Clear',
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      )
+    ];
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: CustomTextField(
-          hintText: widget.hint,
-          textController: _searchFieldTextController,
-          onChanged: (input) => _getPlaces(input),
-          focusNode: _searchFieldTextFocus,
-          onFieldSubmitted: (value) => _searchFieldTextFocus.unfocus(),
-          // onChanged: (input) => print(input),
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.clear),
-            onPressed: () => _searchFieldTextController.clear(),
-          )
-        ],
-      ),
-      body: ListView.separated(
-        separatorBuilder: (cx, _) => Divider(),
-        padding: EdgeInsets.symmetric(horizontal: 15),
-        itemCount: _placePredictions!.features!.length,
-        itemBuilder: (ctx, i) {
-          MapBoxPlace _singlePlace = _placePredictions!.features![i];
-          return ListTile(
-            title: Text(_singlePlace.text!),
-            subtitle: Text(_singlePlace.placeName!),
-            onTap: () => _selectPlace(_singlePlace),
-          );
-        },
-      ),
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      tooltip: 'Back',
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return Container();
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return FutureBuilder(
+      future: query == "" ? null : _getPlaces(query),
+      builder: (context, AsyncSnapshot<Predections> snapshot) => query == ''
+          ? Container(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Enter your address'),
+            )
+          : snapshot.hasData
+              ? ListView.separated(
+                  separatorBuilder: (cx, _) => Divider(),
+                  padding: EdgeInsets.symmetric(horizontal: 15),
+                  itemCount: snapshot.data!.features!.length,
+                  itemBuilder: (ctx, i) {
+                    MapBoxPlace _singlePlace = snapshot.data!.features![i];
+                    return ListTile(
+                      title: Text(_singlePlace.text!),
+                      subtitle: Text(_singlePlace.placeName!),
+                      onTap: () {
+                        close(context, _singlePlace);
+                      },
+                    );
+                  },
+                )
+              : Container(child: Text('Loading...')),
     );
   }
 }

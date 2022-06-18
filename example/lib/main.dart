@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tokens.dart';
+
 import 'package:flutter_mapbox_autocomplete/flutter_mapbox_autocomplete.dart';
 
 void main() => runApp(MyApp());
@@ -31,30 +31,30 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: Text("Flutter MapBox AutoComplete example"),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        child: CustomTextField(
-          hintText: "Select starting point",
-          textController: _startPointController,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MapBoxAutoCompleteWidget(
-                  apiKey: Tokens.MAPBOX_ACCESS_TOKEN,
-                  hint: "Select starting point",
-                  onSelect: (place) {
-                    _startPointController.text = place.placeName;
-                  },
-                  limit: 10,
-                  country: "NG",
-                ),
-              ),
-            );
-          },
-          enabled: true,
-        ),
-      ),
+      // body: SingleChildScrollView(
+      //   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      //   child: CustomTextField(
+      //     hintText: "Select starting point",
+      //     textController: _startPointController,
+      //     onTap: () {
+      //       Navigator.push(
+      //         context,
+      //         MaterialPageRoute(
+      //           builder: (context) => MapBoxAutoCompleteWidget(
+      //             apiKey: Tokens.MAPBOX_ACCESS_TOKEN,
+      //             hint: "Select starting point",
+      //             onSelect: (place) {
+      //               _startPointController.text = place.placeName;
+      //             },
+      //             limit: 10,
+      //             country: "NG",
+      //           ),
+      //         ),
+      //       );
+      //     },
+      //     enabled: true,
+      //   ),
+      // ),
     );
   }
 }
